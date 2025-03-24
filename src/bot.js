@@ -1,17 +1,31 @@
-require("dotenv").config();
+import "dotenv/config";
 import TelegramBot from "node-telegram-bot-api";
 import { GoogleSpreadsheet } from "google-spreadsheet";
-import { launch } from "puppeteer";
+import { JWT } from "google-auth-library";
+import puppeteer from "puppeteer";
 
-// Initialize bot & Google Sheets
 const bot = new TelegramBot(process.env.BOT_TOKEN, { polling: true });
-const doc = new GoogleSpreadsheet(process.env.SPREADSHEET_ID);
 
 // Authenticate with Google Sheets
 async function accessSheet() {
-  await doc.useServiceAccountAuth(JSON.parse(process.env.GOOGLE_SERVICE_ACCOUNT_JSON));
-  await doc.loadInfo();
-  return doc.sheetsByIndex[0]; // First sheet
+  try {
+    const auth = new JWT({
+      email: process.env.GOOGLE_SERVICE_ACCOUNT_EMAIL,
+      key: process.env.GOOGLE_PRIVATE_KEY,
+      scopes: ["https://www.googleapis.com/auth/spreadsheets"],
+    });
+    const doc = new GoogleSpreadsheet(process.env.SPREADSHEET_ID, auth);
+    await doc.loadInfo(); // Load spreadsheet details
+    console.log("✅ Google Sheets authenticated successfully.");
+    const sheet = doc.sheetsByIndex[0]; // Get first sheet
+    if (!sheet) {
+      throw new Error("❌ No sheets found in the document!");
+    }
+    return sheet;
+  } catch (error) {
+    console.error("❌ Error authenticating Google Sheets:", error);
+    return null;
+  }
 }
 
 // Handle messages
@@ -27,27 +41,53 @@ bot.on("message", async (msg) => {
   }
 
   const [num1, num2, num3] = numbers;
-  const multiplication = num1 * num2 * num3;
+  const total = num1 + num2 + num3;
 
   // Store in Google Sheets
   const sheet = await accessSheet();
-  await sheet.addRow({ Num1: num1, Num2: num2, Num3: num3, Product: multiplication });
+  await sheet.addRow({ 
+    Num1: num1,
+    Num2: num2,
+    Num3: num3,
+    Product: total });
 
-  bot.sendMessage(chatId, `✅ Data saved! Multiplication: ${multiplication}`);
+  bot.sendMessage(chatId, `✅ Data saved! Product: ${total}`);
 
-  // Generate and send spreadsheet image
   await sendSpreadsheetImage(chatId);
+  await clearSheet()
 });
 
-// Function to generate image from spreadsheet
 async function sendSpreadsheetImage(chatId) {
-  const sheetURL = `https://docs.google.com/spreadsheets/d/${process.env.SPREADSHEET_ID}`;
+  try {
+    const sheetURL = `https://docs.google.com/spreadsheets/d/${process.env.SPREADSHEET_ID}`;
+    const browser = await puppeteer.launch();
+    const page = await browser.newPage();
+    await page.goto(sheetURL, { waitUntil: "networkidle2" });
+    await page.waitForSelector("canvas", { timeout: 60000 });
+    const tableElement = await page.$("canvas")
+    const screenshotBuffer = Buffer.from(await tableElement.screenshot())
+    await browser.close();
+    bot.sendPhoto(chatId, screenshotBuffer);
+  } catch (error) {
+    console.log(error.message)
+  }
+}
 
-  const browser = await launch();
-  const page = await browser.newPage();
-  await page.goto(sheetURL, { waitUntil: "networkidle2" });
-  await page.screenshot({ path: "spreadsheet.png", fullPage: true });
-  await browser.close();
+async function clearSheet() {
+  try {
+    const sheet = await accessSheet();
+    const rows = await sheet.getRows(); // Get all rows (excluding header)
 
-  bot.sendPhoto(chatId, "spreadsheet.png");
+    if (rows.length === 0) {
+      console.log("No data to clear.");
+      return;
+    }
+    // Delete each row
+    for (const row of rows) {
+      await row.delete();
+    }
+    console.log("✅ Sheet cleared, headers preserved.");
+  } catch (error) {
+    console.error("❌ Error clearing sheet:", error.message);
+  }
 }
