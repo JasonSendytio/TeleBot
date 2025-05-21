@@ -153,7 +153,6 @@ async def handle_real_input(update: Update, context: ContextTypes.DEFAULT_TYPE):
         print(f"❌ Error: {e}")
         await update.message.reply_text(f"Error: {e}")
 
-
 # Start the bot
 async def main():
     app = ApplicationBuilder().token(BOT_TOKEN).build()
