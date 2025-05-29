@@ -53,6 +53,7 @@ def load_data():
         print("Data loaded successfully")
         
     except FileNotFoundError:
+        print("File not found")
         pass
 
 # Function to create spreadsheet image
@@ -127,7 +128,7 @@ async def set_tgt(update: Update, context: ContextTypes.DEFAULT_TYPE):
     global tgt_values
     try:
         if len(context.args) != len(telda_names):
-            await update.message.reply_text(f"❌ Usage: /set_tgt <{len(telda_names)} values, one for each TELDA>\nExample: /set_tgt 1000 1000 950 900 1100 1200 1300 1400 1500 1600")
+            await update.message.reply_text(f"❌ Usage: /set_tgt <{len(telda_names)} values, one for each TELDA")
             return
         
         for idx, value in enumerate(context.args):
