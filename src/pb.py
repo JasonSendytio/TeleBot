@@ -52,7 +52,7 @@ def save_data():
 
 # Load data
 def load_data():
-    global tgt_values, real_values, month1_value, year1_value, month2_value, year2_value, tgt_values_ytd, real_values_ytd, mtd_values
+    global pshi_values, tgt_values, real_values, month1_value, year1_value, month2_value, year2_value, tgt_values_ytd, real_values_ytd, mtd_values
     try:
         with open("data.json", "r") as f:
             data = json.load(f)
@@ -60,6 +60,7 @@ def load_data():
             year1_value = data.get("year1")
             month2_value = data.get("month2")
             year2_value = data.get("year2")
+            pshi_values = data.get("pshi", {})
             tgt_values = data.get("tgt", {})
             real_values = data.get("real", {})
             mtd_values = data.get("mtd", {})
@@ -226,7 +227,7 @@ async def set_pshi(update: Update, context: ContextTypes.DEFAULT_TYPE):
         await update.message.reply_text("✅ PS HI values set successfully")
 
     except Exception as e:
-        print(f"❌ Error set_tgt: {e}")
+        print(f"❌ Error set_pshi: {e}")
         await update.message.reply_text(f"❌ Error: {e}")
 
 async def set_mtd_date(update: Update, context: ContextTypes.DEFAULT_TYPE):
@@ -244,7 +245,7 @@ async def set_mtd_date(update: Update, context: ContextTypes.DEFAULT_TYPE):
         month2_value = str(context.args[2])
         year2_value = int(context.args[3])
 
-        await update.message.reply_text(f"✅ MTD Date set successfully:\n{month1_value}, {year1_value}\n{month2_value}, {year2_value}")
+        await update.message.reply_text(f"✅ MTD Date set successfully:\n{month1_value}, {year1_value} | {month2_value}, {year2_value}")
 
     except ValueError:
         await update.message.reply_text("❌ Please enter again.")
@@ -361,7 +362,7 @@ async def set_real_ytd(update: Update, context: ContextTypes.DEFAULT_TYPE):
         await update.message.reply_text("✅ Real YTD values set successfully")
 
     except Exception as e:
-        print(f"❌ Error: {e}")
+        print(f"❌ Error set_real_ytd: {e}")
         await update.message.reply_text(f"❌ Error: {e}")
 
 async def list_real(update: Update, context: ContextTypes.DEFAULT_TYPE):
