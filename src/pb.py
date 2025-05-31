@@ -2,7 +2,7 @@ import pandas as pd
 import matplotlib
 import matplotlib.pyplot as plt
 from telegram import Update
-from telegram.ext import ApplicationBuilder, MessageHandler, CommandHandler, ContextTypes, filters
+from telegram.ext import ApplicationBuilder, CommandHandler, ContextTypes
 from dotenv import load_dotenv
 import nest_asyncio
 import asyncio
@@ -230,10 +230,7 @@ async def set_pshi(update: Update, context: ContextTypes.DEFAULT_TYPE):
         await update.message.reply_text(f"❌ Error: {e}")
 
 async def set_mtd_date(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    global month1_value
-    global year1_value
-    global month2_value
-    global year2_value
+    global month1_value, year1_value, month2_value, year2_value
     try:
         if len(context.args) != 4:
             await update.message.reply_text("❌ Usage: /set_mtd_date <month1> <year1> <month2> <year2>")
