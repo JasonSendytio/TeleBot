@@ -384,6 +384,7 @@ async def print_table(update: Update, context: ContextTypes.DEFAULT_TYPE):
             return
 
         rows = []
+        mom_list = []
         total_pshi = 0
         total_tgt = 0
         total_real = 0
@@ -414,15 +415,17 @@ async def print_table(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
             tgt = tgt_values[name]
             real= real_values[name]
+            ach = (real / tgt * 100) if tgt != 0 else 0
             mtd_value = mtd_values[name]
             tgt_ytd = tgt_values_ytd[name]
             real_ytd = real_values_ytd[name]
-            ach = (real / tgt * 100) if tgt != 0 else 0
             ach_ytd = (real_ytd / tgt_ytd * 100) if tgt_ytd != 0 else 0
             gap = tgt_ytd - real_ytd
             mom = ((real - mtd_value) / mtd_value * 100) if mtd_value != 0 else 0
+            mom_list.append(mom)
 
             rows.append([name, pshi, tgt, real, f"{ach:.2f}%", mtd_value, tgt_ytd, real_ytd, f"{ach_ytd:.2f}%", gap, f"{mom:.2f}%"])
+
             total_tgt += tgt
             total_real += real
             total_tgt_ytd += tgt_ytd
@@ -433,7 +436,7 @@ async def print_table(update: Update, context: ContextTypes.DEFAULT_TYPE):
         # Calculate average ACH for the bottom row
         avg_ach = (total_real / total_tgt * 100) if total_tgt != 0 else 0
         avg_ach_ytd = (total_real_ytd / total_tgt_ytd * 100) if total_tgt_ytd != 0 else 0
-        avg_mom = (total_real / total_mtd * 100) if total_mtd != 0 else 0
+        avg_mom = sum(mom_list) / len(mom_list) if mom_list else 0
 
         # Add total row
         rows.append(["TOTAL", total_pshi, total_tgt, total_real, f"{avg_ach:.2f}%", total_mtd, total_tgt_ytd, total_real_ytd, f"{avg_ach_ytd:.2f}%", total_gap, f"{avg_mom:.2f}%"])
