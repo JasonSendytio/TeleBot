@@ -17,7 +17,7 @@ nest_asyncio.apply()
 load_dotenv()
 BOT_TOKEN = os.getenv("BOT_TOKEN")
 
-matplotlib.rcParams['font.family'] = 'Roboto'
+matplotlib.rcParams['font.family'] = 'Segoe UI'
 
 # TELDA names are fixed
 telda_names = [
