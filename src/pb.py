@@ -1,4 +1,3 @@
-from matplotlib import colors
 import pandas as pd
 import matplotlib
 import matplotlib.pyplot as plt
@@ -19,13 +18,13 @@ BOT_TOKEN = os.getenv("BOT_TOKEN")
 
 matplotlib.rcParams['font.family'] = 'Segoe UI'
 
-# TELDA names are fixed
+# TELDA names
 telda_names = [
     'BINJAI', 'INNER SUMUT', 'KABANJAHE', 'KISARAN', 'LUBUK PAKAM',
     'PADANGSIDEMPUAN', 'RANTAU PRAPAT', 'SIANTAR', 'SIBOLGA', 'TOBA'
 ]
 
-# Store TGT and Real values per TELDA
+# Store PS HI, TGT Real, MTD Date, MTD values
 pshi_values = {name: None for name in telda_names}
 tgt_values = {name: None for name in telda_names}
 real_values = {name: None for name in telda_names}
@@ -33,7 +32,7 @@ mtd_values = {name: None for name in telda_names}
 tgt_values_ytd = {name: None for name in telda_names}
 real_values_ytd = {name: None for name in telda_names}
 
-# Save data
+# Save data to json file
 def save_data():
     data = {
         "month1": month1_value,
@@ -50,7 +49,7 @@ def save_data():
     with open("data.json", "w") as f:
         json.dump(data, f, indent=4)
 
-# Load data
+# Load data from json file
 def load_data():
     global pshi_values, tgt_values, real_values, month1_value, year1_value, month2_value, year2_value, tgt_values_ytd, real_values_ytd, mtd_values
     try:
@@ -310,7 +309,6 @@ async def set_tgt_ytd(update: Update, context: ContextTypes.DEFAULT_TYPE):
         print(f"❌ Error set_tgt_ytd: {e}")
         await update.message.reply_text(f"❌ Error: {e}")
 
-# Command to list TGT values
 async def list_tgt(update: Update, context: ContextTypes.DEFAULT_TYPE):
     msg = "📋 *TGT Values Status:*\n\n"
     for name, value in tgt_values.items():
@@ -484,7 +482,6 @@ async def main():
     load_data()
     await app.run_polling()
 
-# To ensure we can gracefully stop the bot (e.g., on Ctrl+C)
 if __name__ == '__main__':
     try:
         asyncio.run(main())
