@@ -48,6 +48,23 @@ def save_data():
     with open("data.json", "w") as f:
         json.dump(data, f, indent=4)
 
+def clear_data():
+    global pshi_values, tgt_values, real_values, month1_value, year1_value, month2_value, year2_value, tgt_values_ytd, real_values_ytd, mtd_values
+
+    month1_value = ""
+    year1_value = None
+    month2_value = ""
+    year2_value = None
+
+    pshi_values = {name: None for name in telda_names}
+    tgt_values = {name: None for name in telda_names}
+    real_values = {name: None for name in telda_names}
+    mtd_values = {name: None for name in telda_names}
+    tgt_values_ytd = {name: None for name in telda_names}
+    real_values_ytd = {name: None for name in telda_names}
+
+    save_data()
+
 # Load data from json file
 def load_data():
     global pshi_values, tgt_values, real_values, month1_value, year1_value, month2_value, year2_value, tgt_values_ytd, real_values_ytd, mtd_values
@@ -208,6 +225,15 @@ async def save(Update: Update, context:ContextTypes.DEFAULT_TYPE):
         print(f"❌ Error saving data: {e}")
         return None
     
+async def clear(Update: Update, context:ContextTypes.DEFAULT_TYPE):
+    try:
+        clear_data()
+        await Update.message.reply_text("Successfully cleared data")
+    
+    except Exception as e:
+        print(f"❌ Error clearing data: {e}")
+        return None
+
 async def set_pshi(update: Update, context: ContextTypes.DEFAULT_TYPE):
     global pshi_values
     try:
@@ -245,6 +271,9 @@ async def set_mtd_date(update: Update, context: ContextTypes.DEFAULT_TYPE):
     except ValueError:
         await update.message.reply_text("❌ Please enter again.")
 
+async def list_mtd_date(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    await update.message.reply_text(f"📋 MTD Date:\n{month1_value}, {year1_value} | {month2_value}, {year2_value}")
+
 async def set_mtd(update: Update, context: ContextTypes.DEFAULT_TYPE):
     global mtd_values
     try:
@@ -264,6 +293,13 @@ async def set_mtd(update: Update, context: ContextTypes.DEFAULT_TYPE):
     except Exception as e:
         print(f"❌ Error set_mtd: {e}")
         await update.message.reply_text(f"❌ Error: {e}")
+
+async def list_mtd(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    msg = "📋 *MTD Values Status:*\n"
+    for name, value in mtd_values.items():
+        msg += f"• {name}: {value}\n"
+    
+    await update.message.reply_text(msg, parse_mode="Markdown")
 
 async def set_tgt(update: Update, context: ContextTypes.DEFAULT_TYPE):
     global tgt_values
@@ -305,15 +341,22 @@ async def set_tgt_ytd(update: Update, context: ContextTypes.DEFAULT_TYPE):
         print(f"❌ Error set_tgt_ytd: {e}")
         await update.message.reply_text(f"❌ Error: {e}")
 
+async def list_pshi(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    msg = "📋 *PS HI Values Status:*\n"
+    for name, value in pshi_values.items():
+        msg += f"• {name}: {value}\n"
+    
+    await update.message.reply_text(msg, parse_mode="Markdown")
+
 async def list_tgt(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    msg = "📋 *TGT Values Status:*\n\n"
+    msg = "📋 *TGT Values Status:*\n"
     for name, value in tgt_values.items():
         msg += f"• {name}: {value}\n"
     
     await update.message.reply_text(msg, parse_mode="Markdown")
 
 async def list_tgt_ytd(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    msg = "📋 *TGT YTD Values Status:*\n\n"
+    msg = "📋 *TGT YTD Values Status:*\n"
     for name, value in tgt_values_ytd.items():
         msg += f"• {name}: {value}\n"
     
@@ -360,14 +403,14 @@ async def set_real_ytd(update: Update, context: ContextTypes.DEFAULT_TYPE):
         await update.message.reply_text(f"❌ Error: {e}")
 
 async def list_real(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    msg = "📋 *Real Values Status:*\n\n"
+    msg = "📋 *Real Values Status:*\n"
     for name, value in real_values.items():
         msg += f"• {name}: {value}\n"
     
     await update.message.reply_text(msg, parse_mode="Markdown")
 
 async def list_real_ytd(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    msg = "📋 *Real YTD Values Status:*\n\n"
+    msg = "📋 *Real YTD Values Status:*\n"
     for name, value in real_values_ytd.items():
         msg += f"• {name}: {value}\n"
     
@@ -393,6 +436,10 @@ async def print_table(update: Update, context: ContextTypes.DEFAULT_TYPE):
         mom = 0
 
         for name in telda_names:
+            if pshi_values[name] is None:
+                await update.message.reply_text(f"❌ PS HI value for '{name}' is not set. Use /set_pshi to set it.")
+                return
+            
             if tgt_values[name] is None:
                 await update.message.reply_text(f"❌ TGT value for '{name}' is not set. Use /set_tgt to set it.")
                 return
@@ -409,6 +456,7 @@ async def print_table(update: Update, context: ContextTypes.DEFAULT_TYPE):
                 await update.message.reply_text(f"❌ REAL YTD value for '{name}' is not set. Use /set_real_ytd to set it.")
                 return
 
+            pshi = pshi_values[name]
             tgt = tgt_values[name]
             real= real_values[name]
             ach = (real / tgt * 100) if tgt != 0 else 0
@@ -422,6 +470,7 @@ async def print_table(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
             rows.append([name, pshi, tgt, real, f"{ach:.2f}%", mtd_value, tgt_ytd, real_ytd, f"{ach_ytd:.2f}%", gap, f"{mom:.2f}%"])
 
+            total_pshi += pshi
             total_tgt += tgt
             total_real += real
             total_tgt_ytd += tgt_ytd
@@ -460,8 +509,11 @@ async def main():
 
     commands = [
         ("set_mtd_date", set_mtd_date),
+        ("list_mtd_date", list_mtd_date),
         ("set_mtd", set_mtd),
+        ("list_mtd", list_mtd),
         ("set_pshi", set_pshi),
+        ("list_pshi", list_pshi),
         ("set_tgt", set_tgt),
         ("set_tgt_ytd", set_tgt_ytd),
         ("list_tgt", list_tgt),
@@ -472,6 +524,7 @@ async def main():
         ("list_real_ytd", list_real_ytd),
         ("table", print_table),
         ("save", save),
+        ("clear", clear),
     ]
 
     for cmd, handler in commands:
